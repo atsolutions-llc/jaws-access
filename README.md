@@ -29,9 +29,12 @@ is ever lost to scrollback.
 Three cooperating layers:
 
 1. **Shell capture** (`wsl/`) — your `.bashrc` records the session with
-   `script(1)` and tags every prompt with a `<jaws>` sentinel token. After
-   each command, an extractor strips the terminal escape codes and saves
-   that command's output to a file.
+   `script(1)` and marks every prompt with invisible OSC 133 escape
+   sequences (the shell-integration standard Windows Terminal already
+   understands — nothing is added to what you see, hear, or read in
+   braille). After each command, an extractor uses those marks as prompt
+   boundaries, strips the terminal escape codes, and saves that command's
+   output to a file.
 2. **Claude Code plugin** (`claude-plugin/jaws-access/`) — hooks log every
    Claude reply, every command Claude runs, every file it edits, and every
    notification. A status-line script tracks model, context usage, and
@@ -89,9 +92,6 @@ settings folder on the Windows side.
    the factory script is edited, so all standard behavior is preserved.
 2. Restart JAWS so the keymap loads.
 
-Optional polish: press **JAWSKey+D** in the terminal and add a dictionary
-entry replacing `<jaws>` with nothing, so the prompt token is never spoken.
-
 If your WSL distro or username differ from the defaults, adjust the
 `JawsAccessPath` function in `jaws/JawsAccess-additions.jss` — the path is
 deliberately built from segments there (see Troubleshooting for why).
@@ -129,7 +129,6 @@ Set these in your environment (e.g. in `.bashrc` before starting `claude`):
   finishes. `off`: no speech.
 - `JAWS_CLAUDE_MUTE` — `on` (default): mute JAWS screen echo during Claude
   sessions, restore it after. `off`: never touch screen echo.
-- `JAWS_TOKEN` — the prompt sentinel, default `<jaws>`.
 
 ## Runtime files
 
@@ -152,9 +151,9 @@ well beyond accessibility.
 - **Compile error: CreateObjectEx requires between 2 and 3 parameters** —
   older snippets called it with one argument; both calls in the shipped
   `.jss` use the two-argument form.
-- **Viewers say nothing was captured** — confirm the prompt starts with
-  `<jaws>` in a *new* terminal, and that `~/.cache/jaws-term/last-full.txt`
-  updates after running a command.
+- **Viewers say nothing was captured** — in a *new* terminal, run a command
+  and check that `~/.cache/jaws-term/last-full.txt` updates. If it doesn't,
+  confirm `.bashrc` sources `jaws-terminal.bash` as its last line.
 - **Terminal stuck silent after a crashed Claude session** — press
   Control+JAWSKey+S to restore speech.
 - **Paths in the `.jss`** — never collapse `JawsAccessPath` into a single
@@ -171,14 +170,15 @@ well beyond accessibility.
 - With several terminal tabs, the `last-*` files reflect whichever tab most
   recently finished a command, and the Claude-session mute covers the whole
   Windows Terminal application, not a single tab.
-- Command output containing lines that start with `<jaws> ` confuses the
-  prompt-boundary detection.
+- Command output that contains raw OSC 133 escape bytes (for example,
+  cat-ing an unfiltered terminal recording) confuses the prompt-boundary
+  detection.
 - Claude replies are captured when they finish, not streamed word-by-word.
 
 ## Roadmap
 
 - Braille filtering: on prompt lines, show only the typed command on the
-  braille display (the sentinel token is the detection anchor).
+  braille display (anchored on the known prompt shape).
 - Per-tab capture scoping.
 - A picker for "output of the Nth previous command".
 - Capturing edit diffs, plan-mode plans, and todo lists as separate views.

@@ -16,7 +16,6 @@
 case $- in *i*) ;; *) return ;; esac
 
 JAWS_TERM_DIR="$HOME/.cache/jaws-term"
-JAWS_TOKEN="${JAWS_TOKEN:-<jaws>}"
 JAWS_EXTRACTOR="$HOME/jaws-scripting/wsl/jaws_extract.py"
 mkdir -p "$JAWS_TERM_DIR"
 
@@ -32,11 +31,12 @@ if [ -z "$JAWS_TERM_LOG" ] && [ -t 0 ] && command -v script >/dev/null 2>&1; the
     exec script -q -f "$JAWS_TERM_LOG"
 fi
 
-# --- 2. Prompt token ---------------------------------------------------------
-# Visible sentinel for JAWS (prompt detection, braille filtering, log parsing)
-# wrapped in OSC 133 prompt-start/end marks for Windows Terminal.
-# Silence the token itself in JAWS via a Dictionary Manager rule (see README).
-PS1="\[\e]133;A\a\]${JAWS_TOKEN} ${PS1}\[\e]133;B\a\]"
+# --- 2. Prompt marks ---------------------------------------------------------
+# OSC 133 prompt-start/end marks: invisible escape sequences that Windows
+# Terminal understands (shell integration) and that survive verbatim in the
+# script(1) log, where the extractor uses them as prompt boundaries. Nothing
+# is added to what you see, hear, or read in braille.
+PS1="\[\e]133;A\a\]${PS1}\[\e]133;B\a\]"
 
 # --- 3. Per-command extraction -----------------------------------------------
 # Runs after every command, synchronously and BEFORE the next prompt prints —

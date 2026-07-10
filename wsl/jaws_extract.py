@@ -5,9 +5,14 @@ Called synchronously from PROMPT_COMMAND (see jaws-terminal.bash) as:
 
     jaws_extract.py <session-log> "<output of `history 1`>"
 
+Prompt boundaries are the OSC 133 shell-integration marks that PS1 emits
+(ESC ]133;A at prompt start, ESC ]133;B at prompt end) — script(1) records
+raw pty bytes, so the invisible escape sequences are present in the log.
 At the moment PROMPT_COMMAND runs, the new prompt has NOT been printed yet,
-so the last "<jaws>" sentinel line in the log is the prompt where the command
-was typed, and everything after it is that command's output.
+so the last 133;A mark belongs to the prompt where the command was typed:
+the first line after its 133;B mark is the echoed command, and everything
+below is that command's output. Logs from older versions that used a
+visible "<jaws>" prompt token still parse via the fallback path.
 
 Writes into the log's directory (~/.cache/jaws-term/):
     last-command.txt  the command line (from bash history, not screen echo)
@@ -23,7 +28,9 @@ import re
 import sys
 from datetime import datetime
 
-TOKEN = os.environ.get("JAWS_TOKEN", "<jaws>")
+PROMPT_START = "\x1b]133;A"
+PROMPT_END = "\x1b]133;B"
+TOKEN = os.environ.get("JAWS_TOKEN", "<jaws>")  # legacy-log fallback only
 TAIL_BYTES = 256 * 1024          # how much of the session log to examine
 HISTORY_CAP = 500 * 1024         # cap history.log around this size
 HISTORY_KEEP = 300 * 1024        # ...trimming back to roughly this size
@@ -146,11 +153,22 @@ def main() -> int:
     except OSError:
         return 0
 
-    lines = clean(raw)
-    prompt_idx = [i for i, ln in enumerate(lines) if is_prompt(ln)]
-    if not prompt_idx:
-        return 0
-    region = lines[prompt_idx[-1] + 1:]
+    idx = raw.rfind(PROMPT_START)
+    if idx != -1:
+        chunk = raw[idx + len(PROMPT_START):]
+        end = chunk.find(PROMPT_END)
+        if end != -1:
+            chunk = chunk[end + len(PROMPT_END):]
+        # First line of the chunk is the echoed command on the prompt line;
+        # everything below it is the command's output.
+        region = clean(chunk)[1:]
+    else:
+        # Legacy fallback: logs written when PS1 carried a visible token.
+        lines = clean(raw)
+        prompt_idx = [i for i, ln in enumerate(lines) if is_prompt(ln)]
+        if not prompt_idx:
+            return 0
+        region = lines[prompt_idx[-1] + 1:]
     # Drop trailing blank lines
     while region and not region[-1].strip():
         region.pop()

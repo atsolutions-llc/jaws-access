@@ -6,3 +6,7 @@ jaws/WindowsTerminal.jss
 
 __pycache__/
 *.pyc
+
+# Claude Code project-local files (session settings, permissions, memory)
+.claude/
+CLAUDE.local.md

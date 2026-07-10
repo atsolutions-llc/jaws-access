@@ -71,6 +71,56 @@ Three cooperating layers:
 
 ## Installation
 
+### Starting from zero: setting up WSL
+
+Skip this section if you already work in WSL. These steps are written for
+JAWS users installing WSL for the first time — every step is keyboard-only,
+and they note where the process goes silent so you know nothing is stuck.
+
+1. Open PowerShell as administrator: press the **Windows key**, type
+   `powershell`, then press **Control+Shift+Enter**. A User Account Control
+   dialog appears and JAWS announces it; press **Alt+Y** to accept.
+2. On Windows 10, install Windows Terminal first (Windows 11 already has
+   it): type `winget install Microsoft.WindowsTerminal` and press Enter.
+   This avoids the Microsoft Store interface entirely.
+3. Type `wsl --install -d Ubuntu` and press Enter. This installs WSL2 and
+   Ubuntu in one step. Expect several minutes of intermittent progress
+   messages; JAWS speaks them as they arrive.
+4. Restart the computer when the output tells you to.
+5. After the restart, Ubuntu finishes setting itself up — a console window
+   may open on its own; if not, press the **Windows key**, type `ubuntu`,
+   and press Enter. First-run provisioning can take a minute or two with
+   no output at all. Silence here is normal.
+6. When prompted, type a lowercase username and press Enter. The password
+   prompts that follow are **completely silent as you type** — no
+   character echo, no stars, nothing for JAWS to speak. That's standard
+   Linux behavior, not a stall. Type the password, press Enter, and type
+   it once more to confirm.
+7. You now have a bash prompt. Update the system and install the basics
+   (only `git` is typically missing; the rest confirms prerequisites):
+
+   ```bash
+   sudo apt update && sudo apt -y upgrade
+   sudo apt install -y git python3
+   ```
+
+   `sudo` asks for your password — again with silent typing.
+8. Install Claude Code:
+
+   ```bash
+   curl -fsSL https://claude.ai/install.sh | bash
+   ```
+9. Clone this project and run its installer:
+
+   ```bash
+   git clone https://github.com/atsolutions-llc/jaws-access.git
+   cd jaws-access
+   ./install.sh
+   ```
+
+The installer's output is plain single-column text, written to be listened
+to, and it ends by reading out the two remaining JAWS-side steps.
+
 ### WSL side (automated)
 
 ```bash

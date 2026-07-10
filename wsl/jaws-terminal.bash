@@ -16,7 +16,8 @@
 case $- in *i*) ;; *) return ;; esac
 
 JAWS_TERM_DIR="$HOME/.cache/jaws-term"
-JAWS_EXTRACTOR="$HOME/jaws-scripting/wsl/jaws_extract.py"
+# The extractor lives next to this file, wherever the repo was cloned.
+JAWS_EXTRACTOR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/jaws_extract.py"
 mkdir -p "$JAWS_TERM_DIR"
 
 # --- 1. Session recorder -----------------------------------------------------

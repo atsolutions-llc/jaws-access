@@ -16,6 +16,7 @@ def main():
     tool_name = data.get("tool_name", "")
     tool_input = data.get("tool_input") or {}
 
+    spoken = None
     if tool_name == "Bash":
         command = tool_input.get("command", "").strip()
         if command:
@@ -29,6 +30,8 @@ def main():
             entry += output + "\n\n"
             jawslib.append_capped("commands.log", entry)
             jawslib.write_atomic("last-tool.txt", entry)
+            spoken = "finished: " + jawslib.friendly_phrase(
+                tool_name, tool_input)
     elif tool_name in FILE_TOOLS:
         file_path = tool_input.get("file_path") or tool_input.get(
             "notebook_path") or ""
@@ -38,12 +41,17 @@ def main():
                      + file_path + " ===\n\n")
             jawslib.append_capped("commands.log", entry)
             jawslib.write_atomic("last-tool.txt", entry)
+            spoken = "Claude " + verb + " " + jawslib._basename(file_path)
 
     jawslib.update_status(
         data,
-        activity="finished " + jawslib.tool_summary(tool_name, tool_input)
+        activity="finished " + jawslib.friendly_phrase(tool_name, tool_input)
         + " at " + jawslib.stamp(),
     )
+
+    tier = jawslib.classify(tool_name)
+    if spoken and jawslib.should_speak(tier):
+        jawslib.say(spoken)
 
 
 if __name__ == "__main__":

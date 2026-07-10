@@ -55,6 +55,10 @@ Three cooperating layers:
   and every file it touched.
 - Spoken announcements the moment Claude finishes or needs your input — no
   more silently-stuck permission prompts.
+- Immediate spoken alerts when a tool call fails, with the first line of
+  the error — the red text a sighted user catches at a glance.
+- A significance taxonomy with a verbosity knob: choose whether only
+  important events interrupt you, or also file edits, or all activity.
 - A status keystroke that answers what a sighted user gets by glancing at
   the screen: permission mode, what Claude is doing *right now*, context
   window usage, model, and session cost.
@@ -179,6 +183,16 @@ Set these in your environment (e.g. in `.bashrc` before starting `claude`):
   finishes. `off`: no speech.
 - `JAWS_CLAUDE_MUTE` — `on` (default): mute JAWS screen echo during Claude
   sessions, restore it after. `off`: never touch screen echo.
+- `JAWS_CLAUDE_VERBOSITY` — how much tool activity is spoken as it happens,
+  based on a significance taxonomy (adapted from
+  [claude-sonar](https://github.com/vylasaven/claude-sonar)): every event
+  is classified as noise (file reads, searches), routine (commands,
+  fetches), notable (file edits and writes), or important (failures,
+  permission prompts, session events). `quiet` (default) speaks important
+  only. `normal` adds notable — brief phrases like "Claude edited
+  parser.py". `verbose` adds routine. Failures are spoken at every level,
+  with the first line of the error. Logging and the status keystroke are
+  always complete regardless — verbosity only decides what interrupts you.
 
 ## Runtime files
 
@@ -232,6 +246,8 @@ well beyond accessibility.
 - Per-tab capture scoping.
 - A picker for "output of the Nth previous command".
 - Capturing edit diffs, plan-mode plans, and todo lists as separate views.
+- Digest mode: batch routine announcements and deliver one spoken summary
+  when the turn completes (another good claude-sonar idea).
 
 ## A note on the JAWS script file
 

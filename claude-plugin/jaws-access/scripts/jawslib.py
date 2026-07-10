@@ -28,6 +28,84 @@ SPEAK_MODE = os.environ.get("JAWS_CLAUDE_SPEAK", "announce").lower()
 # Claude session runs (SessionStart/SessionEnd hooks); "off" = leave it alone.
 MUTE_MODE = os.environ.get("JAWS_CLAUDE_MUTE", "on").lower()
 
+# ---------------------------------------------------------------------------
+# Event significance taxonomy (adapted from claude-sonar's noise / routine /
+# notable / important tiers). Tiers decide only what is SPOKEN as it happens;
+# logging and status tracking stay complete at every verbosity, because
+# on-demand review through the JAWS viewers is this project's backbone.
+#
+# JAWS_CLAUDE_VERBOSITY:
+#   quiet   (default) speak important only: failures, permission prompts,
+#           session events, "Claude is done"
+#   normal  also speak notable: file edits and writes
+#   verbose also speak routine: commands, fetches, subagent work
+# ---------------------------------------------------------------------------
+
+VERBOSITY = os.environ.get("JAWS_CLAUDE_VERBOSITY", "quiet").lower()
+
+NOISE_TOOLS = {
+    "Read", "Grep", "Glob", "LS", "NotebookRead", "TodoWrite", "TodoRead",
+    "WebSearch", "ToolSearch", "BashOutput", "TaskOutput", "TaskList",
+    "TaskGet", "ListMcpResources", "ReadMcpResource",
+}
+NOTABLE_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
+
+_SPOKEN_TIERS = {
+    "quiet": {"important"},
+    "normal": {"important", "notable"},
+    "verbose": {"important", "notable", "routine"},
+}
+
+
+def classify(tool_name, failed=False):
+    if failed:
+        return "important"
+    if tool_name in NOTABLE_TOOLS:
+        return "notable"
+    if tool_name in NOISE_TOOLS:
+        return "noise"
+    return "routine"
+
+
+def should_speak(tier):
+    return tier in _SPOKEN_TIERS.get(VERBOSITY, _SPOKEN_TIERS["quiet"])
+
+
+def _basename(path):
+    name = os.path.basename(str(path).rstrip("/"))
+    return name or str(path)
+
+
+def friendly_phrase(tool_name, tool_input):
+    """A short humane phrase for a tool call — 'editing parser.py' rather
+    than a raw path dump. Used for spoken announcements and the Activity
+    status line; full detail is always in the logs."""
+    ti = tool_input if isinstance(tool_input, dict) else {}
+    if tool_name == "Bash":
+        desc = (ti.get("description") or "").strip()
+        if desc:
+            return desc
+        cmd = " ".join((ti.get("command") or "").split())
+        return "command " + (cmd[:80] + "…" if len(cmd) > 80 else cmd)
+    if tool_name in {"Edit", "MultiEdit"}:
+        return "editing " + _basename(ti.get("file_path", "a file"))
+    if tool_name == "Write":
+        return "writing " + _basename(ti.get("file_path", "a file"))
+    if tool_name == "NotebookEdit":
+        return "editing notebook " + _basename(ti.get("notebook_path", ""))
+    if tool_name == "Read":
+        return "reading " + _basename(ti.get("file_path", "a file"))
+    if tool_name in {"Grep", "Glob"}:
+        return "searching for " + str(ti.get("pattern", ""))[:60]
+    if tool_name == "WebFetch":
+        return "fetching " + str(ti.get("url", ""))[:80]
+    if tool_name == "WebSearch":
+        return "searching the web for " + str(ti.get("query", ""))[:60]
+    if tool_name in {"Task", "Agent"}:
+        return "delegating " + str(
+            ti.get("description") or ti.get("prompt") or "")[:60]
+    return tool_summary(tool_name, ti)
+
 
 def read_stdin_json():
     try:

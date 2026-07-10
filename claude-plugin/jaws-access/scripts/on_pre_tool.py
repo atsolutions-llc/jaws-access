@@ -10,10 +10,10 @@ import jawslib
 
 def main():
     data = jawslib.read_stdin_json()
-    summary = jawslib.tool_summary(
+    phrase = jawslib.friendly_phrase(
         data.get("tool_name", "a tool"), data.get("tool_input"))
     jawslib.update_status(
-        data, activity="running " + summary + ", started " + jawslib.stamp())
+        data, activity=phrase + ", started " + jawslib.stamp())
 
 
 if __name__ == "__main__":

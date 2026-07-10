@@ -296,12 +296,32 @@ def run_jaws_function(func_name):
     has focus — hence the manual toggle keystroke as a fallback. Pass the
     BARE name ("JawsAccessMute"): with parentheses appended, JAWS reports
     "unknown function".
+
+    Blocks (a few seconds at worst) to read RunFunction's result: True if
+    JAWS ran the function, False if it didn't (not compiled in, wrong app
+    focused), None if PowerShell or JAWS was unreachable. Only the session
+    hooks call this, so the wait never sits between Claude's tool calls.
     """
     safe = func_name.strip().removesuffix("()").replace("'", "''")
-    _run_powershell(
+    ps = (
         "try { $j = New-Object -ComObject FreedomSci.JawsApi; "
-        "[void]$j.RunFunction('" + safe + "') } catch {}"
+        "$j.RunFunction('" + safe + "') } catch { 'unreachable' }"
     )
+    encoded = base64.b64encode(ps.encode("utf-16-le")).decode("ascii")
+    try:
+        out = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive",
+             "-EncodedCommand", encoded],
+            stdin=subprocess.DEVNULL,
+            capture_output=True, text=True, timeout=10,
+        ).stdout.strip().lower()
+    except Exception:
+        return None
+    if out == "true":
+        return True
+    if out == "false":
+        return False
+    return None
 
 
 def run(main):

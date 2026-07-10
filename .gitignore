@@ -1,0 +1,8 @@
+# Local convenience build: factory Windows Terminal script (copyright
+# Freedom Scientific Inc.) merged with JawsAccess-additions.jss. Not for
+# redistribution — regenerate by pasting the additions at the end of the
+# factory source in Script Manager.
+jaws/WindowsTerminal.jss
+
+__pycache__/
+*.pyc

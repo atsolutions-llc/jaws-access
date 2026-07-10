@@ -1,0 +1,8 @@
+{
+  "name": "jaws-access",
+  "description": "JAWS screen reader accessibility: logs Claude's messages and Bash commands to files that JAWS scripts open in virtual viewers, and announces completions and permission prompts through JAWS speech.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Nora Bowden"
+  }
+}

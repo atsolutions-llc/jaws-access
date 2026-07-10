@@ -1,0 +1,17 @@
+; WindowsTerminal.jkm — key bindings for the JAWS terminal accessibility
+; scripts. Place alongside WindowsTerminal.jss in your JAWS user settings
+; folder (%APPDATA%\Freedom Scientific\JAWS\2026\Settings\enu), or assign
+; the same bindings through Keyboard Manager if a factory keymap already
+; exists for Windows Terminal.
+
+[Common Keys]
+Control+JAWSKey+O=ShowLastCommandOutput
+Control+JAWSKey+H=ShowTerminalHistory
+Control+JAWSKey+K=SpeakLastCommand
+Control+JAWSKey+M=ShowClaudeMessages
+Control+JAWSKey+B=ShowClaudeCommands
+Control+JAWSKey+L=SpeakLastClaudeMessage
+Control+Shift+JAWSKey+L=ShowLastClaudeMessage
+Control+JAWSKey+V=ShowScrollbackInViewer
+Control+JAWSKey+S=ToggleTerminalSpeech
+Control+JAWSKey+U=SpeakClaudeStatus

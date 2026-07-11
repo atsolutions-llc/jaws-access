@@ -55,6 +55,9 @@ Three cooperating layers:
   and every file it touched.
 - Spoken announcements the moment Claude finishes or needs your input — no
   more silently-stuck permission prompts.
+- Live narration while Claude works: the first sentence of each of
+  Claude's short status messages ("Let me check the config…") is spoken
+  as it is written, so a long turn is never a silent mystery.
 - Immediate spoken alerts when a tool call fails, with the first line of
   the error — the red text a sighted user catches at a glance.
 - A significance taxonomy with a verbosity knob: choose whether only
@@ -189,6 +192,12 @@ Set these in your environment (e.g. in `.bashrc` before starting `claude`):
   finishes. `off`: no speech.
 - `JAWS_CLAUDE_MUTE` — `on` (default): mute the terminal's automatic
   narration during Claude sessions, restore it after. `off`: never mute.
+- `JAWS_CLAUDE_NARRATE` — `on` (default): a background tailer follows the
+  session transcript and speaks the first sentence of each of Claude's
+  text messages the moment it is written, including the short status
+  sentences between tool calls. `off`: no live narration. (Claude's
+  internal reasoning is not available outside the TUI; this narrates
+  exactly what Claude visibly says.)
 - `JAWS_CLAUDE_VERBOSITY` — how much tool activity is spoken as it happens,
   based on a significance taxonomy (adapted from
   [claude-sonar](https://github.com/vylasaven/claude-sonar)): every event
@@ -210,7 +219,9 @@ Everything lands under `~/.cache/`, readable from Windows at
 - `jaws-term/` — `last-command.txt`, `last-output.txt`, `last-full.txt`,
   `history.log` (size-capped), raw `session-*.log` recordings.
 - `jaws-claude/` — `messages.log`, `last-message.txt`, `commands.log`,
-  `last-tool.txt`, `notifications.log`, `status.txt`, `state.json`.
+  `last-tool.txt`, `notifications.log`, `status.txt`, `state.json`,
+  `tailer.pid` (the live-narration daemon), `jss-version.txt` (which JAWS
+  script build is loaded, written on demand).
 
 The logs double as a permanent, greppable record of your sessions — useful
 well beyond accessibility.

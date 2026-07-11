@@ -15,6 +15,12 @@ import jawslib
 
 
 def main():
+    data = jawslib.read_stdin_json()
+    # Live narration of Claude's status sentences (transcript_tailer.py);
+    # start_tailer replaces any tailer left over from a previous session
+    # and is itself a no-op when narration or speech is off.
+    jawslib.start_tailer(data.get("transcript_path"))
+
     if jawslib.MUTE_MODE == "off":
         return
     ok = jawslib.run_jaws_function("JawsAccessMute")

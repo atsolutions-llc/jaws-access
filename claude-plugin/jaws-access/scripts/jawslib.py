@@ -11,6 +11,7 @@ Design rules for every hook in this plugin:
 import base64
 import json
 import os
+import signal
 import subprocess
 import sys
 from datetime import datetime
@@ -27,6 +28,11 @@ SPEAK_MODE = os.environ.get("JAWS_CLAUDE_SPEAK", "announce").lower()
 # JAWS_CLAUDE_MUTE: "on" (default) = mute JAWS terminal screen echo while a
 # Claude session runs (SessionStart/SessionEnd hooks); "off" = leave it alone.
 MUTE_MODE = os.environ.get("JAWS_CLAUDE_MUTE", "on").lower()
+
+# JAWS_CLAUDE_NARRATE: "on" (default) = a background tailer speaks the first
+# sentence of each assistant text block as the turn unfolds (the small
+# "Let me check the config…" status messages); "off" = no live narration.
+NARRATE_MODE = os.environ.get("JAWS_CLAUDE_NARRATE", "on").lower()
 
 # ---------------------------------------------------------------------------
 # Event significance taxonomy (adapted from claude-sonar's noise / routine /
@@ -329,6 +335,53 @@ def run_jaws_function(func_name):
     if out == "false":
         return False
     return None
+
+
+# ---------------------------------------------------------------------------
+# Transcript tailer lifecycle (see transcript_tailer.py). One tailer at a
+# time: the pidfile is the ownership token — the daemon self-exits when it
+# stops matching, so a leaked process can never outlive the next session.
+# ---------------------------------------------------------------------------
+
+TAILER_PIDFILE = os.path.join(LOG_DIR, "tailer.pid")
+
+
+def stop_tailer():
+    try:
+        with open(TAILER_PIDFILE, "r", encoding="utf-8") as f:
+            pid = int(f.read().split()[0])
+        with open("/proc/%d/cmdline" % pid, "rb") as f:
+            cmdline = f.read().decode("utf-8", errors="replace")
+        # Never signal a recycled pid that belongs to something else.
+        if "transcript_tailer" in cmdline:
+            os.kill(pid, signal.SIGTERM)
+    except (OSError, ValueError, IndexError):
+        pass
+    try:
+        os.remove(TAILER_PIDFILE)
+    except OSError:
+        pass
+
+
+def start_tailer(transcript_path):
+    stop_tailer()
+    if NARRATE_MODE == "off" or SPEAK_MODE == "off" or not transcript_path:
+        return
+    script = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "transcript_tailer.py")
+    ensure_dir()
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, script, transcript_path],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        return
+    with open(TAILER_PIDFILE, "w", encoding="utf-8") as f:
+        f.write(str(proc.pid))
 
 
 def run(main):

@@ -8,6 +8,7 @@ import jawslib
 
 
 def main():
+    jawslib.stop_tailer()
     if jawslib.MUTE_MODE == "off":
         return
     ok = jawslib.run_jaws_function("JawsAccessUnmute")

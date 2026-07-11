@@ -1,52 +1,56 @@
 ; JawsAccess-additions.jss — JAWS terminal + Claude Code accessibility
 ;
-; APPEND-ONLY additions to the factory Windows Terminal scripts. Nothing in
-; the factory file needs to be edited.
+; Additions to the factory Windows Terminal scripts. Almost append-only:
+; the Claude-session mute needs two small edits inside the factory code,
+; described in steps 2 and 3 below. If you would rather skip the hand
+; edits, replace the whole file with jaws/WindowsTerminal.jss instead —
+; that is the factory file with everything here already merged.
 ;
 ; Install (JAWS 2026):
 ;   1. Focus Windows Terminal and press JAWSKey+0 to open Script Manager.
 ;      It shows the Windows Terminal script source.
-;   2. Move to the very end of the file (Ctrl+End) and paste this entire
+;   2. Add the mute flag to the globals list at the top of the factory
+;      file: put a comma after the last entry (usually
+;      "int WindowsTerminalLastKeyPressTime") and add a new line:
+;          int JawsAccessMuted
+;   3. In the factory ReadNewText function, wrap the Say call so it is
+;      skipped while muted. Replace:
+;          Say(GetNewlyWrittenText(Text,terminal_LastText),OT_NONHIGHLIGHTED_SCREEN_TEXT)
+;      with:
+;          if !JawsAccessMuted
+;              Say(GetNewlyWrittenText(Text,terminal_LastText),OT_NONHIGHLIGHTED_SCREEN_TEXT)
+;          EndIf
+;      Leave the "terminal_LastText = Text" line after it untouched, so
+;      nothing is spoken in a burst when the mute lifts.
+;   4. Move to the very end of the file (Ctrl+End) and paste this entire
 ;      file below the existing code.
-;   3. Compile with Ctrl+S.
-;   4. Install the key bindings from WindowsTerminal.jkm (the WSL-side
+;   5. Compile with Ctrl+S.
+;   6. Install the key bindings from WindowsTerminal.jkm (the WSL-side
 ;      install.sh copies it into your JAWS user settings folder).
-;
-; If the compiler rejects the globals section below (some versions may not
-; accept a second globals block), delete these two lines here and add
-; JawsAccessSavedEcho and JawsAccessMuted to the globals list at the top of
-; the factory file instead.
 ;
 ; Reads capture files written on the WSL side (wsl/jaws-terminal.bash and
 ; the jaws-access Claude Code plugin) into the virtual viewer or speech.
 ; See the project README for the full picture.
 
-globals
-    int JawsAccessSavedEcho,
-    int JawsAccessMuted
-
 ; ---------------------------------------------------------------------------
-; Claude-session mute: silence the terminal's automatic screen-echo chatter
-; while a Claude Code session runs. The factory ReadNewText loop only speaks
-; when screen echo is ECHO_ALL, so this silences exactly that. SayString
-; announcements, typing echo, and manual review are unaffected.
+; Claude-session mute: silence the terminal's automatic narration while a
+; Claude Code session runs. JAWS 2026 removed SetScreenEcho — calls compile
+; but fail at runtime with "unknown function call" — so the mute is a plain
+; script flag: the factory ReadNewText skips its Say while JawsAccessMuted
+; is set (steps 2 and 3 above). SayString announcements, typing echo, and
+; manual review are unaffected. The flag survives app switches for the
+; whole JAWS session, the same way the factory terminal_LastText global
+; does.
 ; ---------------------------------------------------------------------------
 
 void function JawsAccessMute()
 ; Called by the Claude Code jaws-access plugin over the JAWS API when a
 ; session starts, and by the ToggleTerminalSpeech script.
-    if !JawsAccessMuted
-        JawsAccessSavedEcho = GetScreenEcho()
-        JawsAccessMuted = true
-    EndIf
-    SetScreenEcho(ECHO_NONE)
+    JawsAccessMuted = true
 EndFunction
 
 void function JawsAccessUnmute()
-    if JawsAccessMuted
-        SetScreenEcho(JawsAccessSavedEcho)
-        JawsAccessMuted = false
-    EndIf
+    JawsAccessMuted = false
 EndFunction
 
 Script ToggleTerminalSpeech()
@@ -59,16 +63,6 @@ Script ToggleTerminalSpeech()
         SayString("Terminal speech off")
     EndIf
 EndScript
-
-void function FocusChangedEvent(handle hwndFocus, handle hwndPrevFocus)
-; Switching apps reloads this app's settings, which would undo a runtime
-; mute. Re-apply it on the way back in while a Claude session is active
-; (JawsAccessMuted survives app switches), then chain to default handling.
-    if JawsAccessMuted
-        SetScreenEcho(ECHO_NONE)
-    EndIf
-    FocusChangedEvent(hwndFocus, hwndPrevFocus)
-EndFunction
 
 ; ---------------------------------------------------------------------------
 ; Reading the WSL capture files

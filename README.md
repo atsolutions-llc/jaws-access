@@ -40,8 +40,8 @@ Three cooperating layers:
    notification. A status-line script tracks model, context usage, and
    cost. Hooks also push speech directly through the JAWS API: "Claude is
    done", "Claude needs your permission to use Bash" — and automatically
-   silence JAWS screen echo while a Claude session runs, so the TUI repaint
-   chatter disappears entirely.
+   silence the terminal's automatic narration while a Claude session runs,
+   so the TUI repaint chatter disappears entirely.
 3. **JAWS scripts** (`jaws/`) — keystrokes inside Windows Terminal that open
    the captured content in the virtual viewer or speak it.
 
@@ -169,7 +169,7 @@ should land in the virtual viewer reading that command's output. Then start
 | Control+Shift+JAWSKey+L | Claude's latest reply in the virtual viewer |
 | Control+JAWSKey+U | Speak session status: mode, current activity, context, model, cost |
 | Control+JAWSKey+V | Entire terminal buffer including scrollback, in the virtual viewer |
-| Control+JAWSKey+S | Toggle terminal speech (screen echo) manually |
+| Control+JAWSKey+S | Toggle terminal speech (the Claude-session mute) manually |
 
 Escape closes the virtual viewer. Viewers open at the end of the content,
 on the newest line.
@@ -181,8 +181,8 @@ Set these in your environment (e.g. in `.bashrc` before starting `claude`):
 - `JAWS_CLAUDE_SPEAK` — `announce` (default): short announcements plus
   spoken permission prompts. `full`: speak Claude's entire reply when it
   finishes. `off`: no speech.
-- `JAWS_CLAUDE_MUTE` — `on` (default): mute JAWS screen echo during Claude
-  sessions, restore it after. `off`: never touch screen echo.
+- `JAWS_CLAUDE_MUTE` — `on` (default): mute the terminal's automatic
+  narration during Claude sessions, restore it after. `off`: never mute.
 - `JAWS_CLAUDE_VERBOSITY` — how much tool activity is spoken as it happens,
   based on a significance taxonomy (adapted from
   [claude-sonar](https://github.com/vylasaven/claude-sonar)): every event

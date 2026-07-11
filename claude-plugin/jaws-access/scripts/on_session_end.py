@@ -11,21 +11,21 @@ def main():
     if jawslib.MUTE_MODE == "off":
         return
     ok = jawslib.run_jaws_function("JawsAccessUnmute")
-    if ok:
-        detail = "terminal speech restored"
-    elif ok is False:
-        detail = "unmute failed: JAWS did not run JawsAccessUnmute"
-    else:
+    if ok is None:
         detail = "unmute failed: PowerShell or JAWS unreachable"
+    else:
+        # JAWS reports success even for unknown functions; see
+        # on_session_start.py.
+        detail = "terminal speech restore requested"
     jawslib.append_capped(
         "notifications.log",
         "=== " + jawslib.stamp() + " session_end ===\n" + detail + "\n\n",
     )
-    if ok:
-        jawslib.say("Claude session ended, terminal speech restored")
-    else:
+    if ok is None:
         jawslib.say("Claude session ended, but terminal speech may still "
                     "be muted. Press Control JAWSKey S to toggle it.")
+    else:
+        jawslib.say("Claude session ended, terminal speech restored")
 
 
 if __name__ == "__main__":

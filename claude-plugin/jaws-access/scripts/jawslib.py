@@ -297,9 +297,11 @@ def run_jaws_function(func_name):
     BARE name ("JawsAccessMute"): with parentheses appended, JAWS reports
     "unknown function".
 
-    Blocks (a few seconds at worst) to read RunFunction's result: True if
-    JAWS ran the function, False if it didn't (not compiled in, wrong app
-    focused), None if PowerShell or JAWS was unreachable. Only the session
+    Blocks (a few seconds at worst) to read RunFunction's result, but that
+    result is weak: JAWS 2026 returns True even when the function does not
+    exist (it speaks "Unknown function call" aloud instead), so True only
+    means the request reached JAWS. Treat None (PowerShell or JAWS
+    unreachable) as the only trustworthy failure signal. Only the session
     hooks call this, so the wait never sits between Claude's tool calls.
     """
     safe = func_name.strip().removesuffix("()").replace("'", "''")

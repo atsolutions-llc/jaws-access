@@ -55,9 +55,10 @@ Three cooperating layers:
   and every file it touched.
 - Spoken announcements the moment Claude finishes or needs your input — no
   more silently-stuck permission prompts.
-- Live narration while Claude works: the first sentence of each of
-  Claude's short status messages ("Let me check the config…") is spoken
-  as it is written, so a long turn is never a silent mystery.
+- Live narration while Claude works: each of Claude's messages — the
+  short status sentences ("Let me check the config…") and the final
+  reply alike — is spoken as it is written, so a long turn is never a
+  silent mystery. Press Control to silence a reading you don't need.
 - Immediate spoken alerts when a tool call fails, with the first line of
   the error — the red text a sighted user catches at a glance.
 - A significance taxonomy with a verbosity knob: choose whether only
@@ -192,12 +193,14 @@ Set these in your environment (e.g. in `.bashrc` before starting `claude`):
   finishes. `off`: no speech.
 - `JAWS_CLAUDE_MUTE` — `on` (default): mute the terminal's automatic
   narration during Claude sessions, restore it after. `off`: never mute.
-- `JAWS_CLAUDE_NARRATE` — `on` (default): a background tailer follows the
-  session transcript and speaks the first sentence of each of Claude's
-  text messages the moment it is written, including the short status
-  sentences between tool calls. `off`: no live narration. (Claude's
-  internal reasoning is not available outside the TUI; this narrates
-  exactly what Claude visibly says.)
+- `JAWS_CLAUDE_NARRATE` — `full` (default): a background tailer follows
+  the session transcript and speaks each of Claude's text messages the
+  moment it is written, including the short status sentences between
+  tool calls. `first`: speak only the first sentence of each message.
+  `off`: no live narration. Speech is queued, so readings are never cut
+  off by other announcements; a Control tap silences the current one.
+  (Claude's internal reasoning is not available outside the TUI; this
+  narrates exactly what Claude visibly says.)
 - `JAWS_CLAUDE_VERBOSITY` — how much tool activity is spoken as it happens,
   based on a significance taxonomy (adapted from
   [claude-sonar](https://github.com/vylasaven/claude-sonar)): every event

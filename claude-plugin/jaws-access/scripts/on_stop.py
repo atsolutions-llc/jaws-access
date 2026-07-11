@@ -9,6 +9,7 @@ then announces through JAWS ("announce" mode) or speaks the whole message
 """
 
 import json
+import os
 
 import jawslib
 
@@ -58,9 +59,13 @@ def main():
     jawslib.update_status(
         data, activity="idle, finished responding at " + jawslib.stamp())
 
-    if jawslib.SPEAK_MODE == "full":
+    narrated = (jawslib.NARRATE_MODE == "full"
+                and os.path.exists(jawslib.TAILER_PIDFILE))
+    if jawslib.SPEAK_MODE == "full" and not narrated:
         jawslib.say(message)
     else:
+        # The narrator already read (or is reading) the final message;
+        # speech is queued, so this lands after it as the end marker.
         jawslib.say("Claude is done")
 
 

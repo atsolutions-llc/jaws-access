@@ -3,10 +3,12 @@
 
 Started by on_session_start.py, stopped by on_session_end.py (pidfile in
 ~/.cache/jaws-claude/tailer.pid). Tails the session transcript JSONL,
-which Claude Code appends in near-real-time DURING a turn, and speaks the
-first sentence of each assistant text block as it is written — the small
-"Let me check the config…" messages a sighted user reads next to the
-spinner between tool calls.
+which Claude Code appends in near-real-time DURING a turn, and speaks
+each assistant text block as it is written — the short "Let me check the
+config…" messages between tool calls and the final reply alike. JAWS
+speech is queued, not interrupting, so readings never cut each other
+off; a Control tap silences the current one. JAWS_CLAUDE_NARRATE=first
+speaks only each block's first sentence instead.
 
 Why the transcript and not a hook: no hook event carries streamed
 assistant text. The TUI's reasoning snippets ("I need to check…") come
@@ -31,7 +33,8 @@ import jawslib
 POLL_SECONDS = 0.4
 IDLE_EXIT_SECONDS = 24 * 60 * 60
 PIDFILE_GRACE_SECONDS = 10   # let on_session_start write the pidfile first
-SENTENCE_CAP = 200
+SENTENCE_CAP = 200           # "first" mode: one spoken sentence
+FULL_CAP = 3000              # "full" mode: whole messages, sanity-bounded
 
 # When set, spoken text is appended to this file instead of going to JAWS.
 # Used by the test harness; never set in normal operation.
@@ -43,19 +46,22 @@ def emit(text):
         with open(DEBUG_FILE, "a", encoding="utf-8") as f:
             f.write(text + "\n")
     else:
-        jawslib.say(text)
+        jawslib.say(text, cap=FULL_CAP)
+
+
+def strip_markdown(text):
+    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)  # [label](url)
+    text = re.sub(r"[`*_#]+", "", text)
+    return " ".join(text.split())
 
 
 def first_sentence(text):
-    """A speakable first sentence: markdown stripped, length capped.
+    """A speakable first sentence, length capped.
 
     Over-long sentences are cut silently at a clause boundary rather than
-    flagged with a spoken "truncated" — narration is a live teaser, and
+    flagged with a spoken "truncated" — this mode is a live teaser, and
     the full text is always in the viewers and messages.log.
     """
-    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)  # [label](url)
-    text = re.sub(r"[`*_#]+", "", text)
-    text = " ".join(text.split())
     m = re.match(r"(.+?[.!?])(?:\s|$)", text)
     sentence = m.group(1) if m else text
     if len(sentence) > SENTENCE_CAP:
@@ -84,8 +90,12 @@ def handle_line(raw):
     for block in content:
         if isinstance(block, dict) and block.get("type") == "text":
             text = (block.get("text") or "").strip()
-            if len(text) >= 5:
-                emit(first_sentence(text))
+            if len(text) < 5:
+                continue
+            text = strip_markdown(text)
+            if jawslib.NARRATE_MODE == "first":
+                text = first_sentence(text)
+            emit(text)
 
 
 def owns_pidfile():

@@ -29,10 +29,12 @@ SPEAK_MODE = os.environ.get("JAWS_CLAUDE_SPEAK", "announce").lower()
 # Claude session runs (SessionStart/SessionEnd hooks); "off" = leave it alone.
 MUTE_MODE = os.environ.get("JAWS_CLAUDE_MUTE", "on").lower()
 
-# JAWS_CLAUDE_NARRATE: "on" (default) = a background tailer speaks the first
-# sentence of each assistant text block as the turn unfolds (the small
-# "Let me check the config…" status messages); "off" = no live narration.
-NARRATE_MODE = os.environ.get("JAWS_CLAUDE_NARRATE", "on").lower()
+# JAWS_CLAUDE_NARRATE: "full" (default) = a background tailer speaks each
+# assistant text block in full as the turn unfolds; "first" = only the
+# first sentence of each block; "off" = no live narration. JAWS speech is
+# queued (SayString with flush=false), so a long reading is never cut off
+# by the next announcement, and a Control tap silences it on demand.
+NARRATE_MODE = os.environ.get("JAWS_CLAUDE_NARRATE", "full").lower()
 
 # ---------------------------------------------------------------------------
 # Event significance taxonomy (adapted from claude-sonar's noise / routine /
@@ -182,19 +184,20 @@ def response_text(r):
     return str(r)
 
 
-def say(text):
+def say(text, cap=SAY_MAX):
     """Speak through JAWS on the Windows host, fire-and-forget.
 
     Uses the JAWS COM automation object (FreedomSci.JawsApi). The PowerShell
     script is passed via -EncodedCommand (UTF-16LE base64) so no quoting or
     escaping of the message can break it. Silently a no-op if PowerShell
-    interop or JAWS is unavailable.
+    interop or JAWS is unavailable. `cap` bounds the spoken length; the
+    narrator passes a large one for full-message readings.
     """
     if SPEAK_MODE == "off" or not text:
         return
     text = " ".join(text.split())
-    if len(text) > SAY_MAX:
-        text = text[:SAY_MAX] + " , truncated"
+    if len(text) > cap:
+        text = text[:cap] + " , truncated"
     ps_text = text.replace("'", "''")
     _run_powershell(
         "try { $j = New-Object -ComObject FreedomSci.JawsApi; "

@@ -47,14 +47,25 @@ def emit(text):
 
 
 def first_sentence(text):
-    """A speakable first sentence: markdown stripped, length capped."""
+    """A speakable first sentence: markdown stripped, length capped.
+
+    Over-long sentences are cut silently at a clause boundary rather than
+    flagged with a spoken "truncated" — narration is a live teaser, and
+    the full text is always in the viewers and messages.log.
+    """
     text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)  # [label](url)
     text = re.sub(r"[`*_#]+", "", text)
     text = " ".join(text.split())
     m = re.match(r"(.+?[.!?])(?:\s|$)", text)
     sentence = m.group(1) if m else text
     if len(sentence) > SENTENCE_CAP:
-        sentence = sentence[:SENTENCE_CAP].rstrip() + " , truncated"
+        cut = sentence[:SENTENCE_CAP]
+        for sep in (", ", "; ", ": ", " — ", " "):
+            pos = cut.rfind(sep)
+            if pos > SENTENCE_CAP // 2:
+                cut = cut[:pos]
+                break
+        sentence = cut.rstrip(",;:— ")
     return sentence
 
 

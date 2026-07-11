@@ -201,6 +201,10 @@ Set these in your environment (e.g. in `.bashrc` before starting `claude`):
   off by other announcements; a Control tap silences the current one.
   (Claude's internal reasoning is not available outside the TUI; this
   narrates exactly what Claude visibly says.)
+- `JAWS_TOKEN` — only for the terminal extractor's legacy fallback: when a
+  session log has no OSC 133 prompt marks (a shell without the shipped
+  prompt integration), lines starting with this token (default `<jaws>`)
+  are treated as prompt lines. Not needed in a normal install.
 - `JAWS_CLAUDE_VERBOSITY` — how much tool activity is spoken as it happens,
   based on a significance taxonomy (adapted from
   [claude-sonar](https://github.com/vylasaven/claude-sonar)): every event

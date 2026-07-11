@@ -137,6 +137,22 @@ void function JawsAccessShowFile(string sPath, string sTitle, string sEmptyMsg)
     SayLine()
 EndFunction
 
+void function JawsAccessWriteVersion()
+; Deploy verification. ReloadAllScripts has twice been observed to return
+; without actually loading a freshly compiled .jsb, and RunFunction's
+; return value proves nothing — so after every recompile the WSL side
+; calls this and then reads jss-version.txt to confirm which build is
+; live. Bump the string whenever the script source changes.
+    var object oFSO = CreateObjectEx("Scripting.FileSystemObject", false)
+    if !oFSO
+        return
+    EndIf
+    var object oFile = oFSO.CreateTextFile(
+        JawsAccessPath("jaws-claude", "jss-version.txt"), true)
+    oFile.WriteLine("2026-07-11.3")
+    oFile.Close()
+EndFunction
+
 void function JawsAccessSpeakFile(string sPath, string sEmptyMsg)
     var string sText = JawsAccessReadFile(sPath)
     if !sText
@@ -200,6 +216,68 @@ Script ShowLastClaudeMessage()
     JawsAccessShowFile(JawsAccessPath("jaws-claude", "last-message.txt"),
         "Latest Claude message",
         "No Claude message logged yet.")
+EndScript
+
+; ---------------------------------------------------------------------------
+; Shift+Tab: announce the Claude Code permission mode
+;
+; Claude Code cycles its permission mode on Shift+Tab but exposes no event
+; for it: no hook fires on the change and the statusline payload carries no
+; mode field (both are open Claude Code feature requests, #6227 and #31579,
+; verified absent in 2.1.207). So this is the one place the project reads
+; the screen: pass the keystroke through, wait for the TUI to redraw, then
+; look for the mode indicator Claude draws under its input box. Default
+; mode draws no indicator, so "nothing found" is announced as manual
+; approval — which also means pressing Shift+Tab outside Claude announces
+; "manual approval" after a second; harmless, and the keystroke still
+; reaches the application first in every case.
+;
+; If a Claude Code update changes the indicator wording, update the
+; needles in JawsAccessModeOnScreen below.
+; ---------------------------------------------------------------------------
+
+string function JawsAccessModeOnScreen()
+; The permission-mode indicator currently visible in the terminal, as a
+; speakable phrase (matching the plugin's status.txt wording), or an empty
+; string when no indicator is on screen.
+    var string sText = StringLower(GetTextInConsoleWindow())
+    if StringContains(sText, "accept edits on")
+        return "accept edits"
+    EndIf
+    if StringContains(sText, "plan mode on")
+        return "plan mode"
+    EndIf
+    if StringContains(sText, "bypass permissions on")
+        return "bypass permissions, fully automatic"
+    EndIf
+    if StringContains(sText, "auto mode on")
+        return "auto mode"
+    EndIf
+    return ""
+EndFunction
+
+Script AnnounceClaudeMode()
+; Bound to Shift+Tab. The keystroke is always passed through; the
+; announcement waits until the indicator actually changes (up to about
+; 1.6 seconds) so a slow redraw is not read as the old mode.
+    if GetObjectClassName() != TerminalClassName
+        TypeCurrentScriptKey()
+        return
+    EndIf
+    var string sBefore = JawsAccessModeOnScreen()
+    TypeCurrentScriptKey()
+    var string sAfter = sBefore
+    var int i = 0
+    while i < 8 && sAfter == sBefore
+        Delay(2)
+        sAfter = JawsAccessModeOnScreen()
+        i = i + 1
+    EndWhile
+    if sAfter
+        SayString(sAfter)
+    else
+        SayString("manual approval")
+    EndIf
 EndScript
 
 ; ---------------------------------------------------------------------------

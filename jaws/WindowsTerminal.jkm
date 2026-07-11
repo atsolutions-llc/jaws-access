@@ -15,3 +15,4 @@ Control+Shift+JAWSKey+L=ShowLastClaudeMessage
 Control+JAWSKey+V=ShowScrollbackInViewer
 Control+JAWSKey+S=ToggleTerminalSpeech
 Control+JAWSKey+U=SpeakClaudeStatus
+Shift+Tab=AnnounceClaudeMode

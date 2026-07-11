@@ -58,7 +58,12 @@ Three cooperating layers:
 - Immediate spoken alerts when a tool call fails, with the first line of
   the error — the red text a sighted user catches at a glance.
 - A significance taxonomy with a verbosity knob: choose whether only
-  important events interrupt you, or also file edits, or all activity.
+  important events interrupt you, or also file edits, or all activity —
+  at the most verbose level, commands and fetches are announced as they
+  start, the spoken equivalent of the spinner's "Running one shell
+  command…".
+- The permission mode spoken as you cycle it with Shift+Tab — "auto mode",
+  "plan mode", "manual approval" — instead of a silent change.
 - A status keystroke that answers what a sighted user gets by glancing at
   the screen: permission mode, what Claude is doing *right now*, context
   window usage, model, and session cost.
@@ -170,6 +175,7 @@ should land in the virtual viewer reading that command's output. Then start
 | Control+JAWSKey+U | Speak session status: mode, current activity, context, model, cost |
 | Control+JAWSKey+V | Entire terminal buffer including scrollback, in the virtual viewer |
 | Control+JAWSKey+S | Toggle terminal speech (the Claude-session mute) manually |
+| Shift+Tab | Passed through to Claude Code (cycles the permission mode); the new mode is announced |
 
 Escape closes the virtual viewer. Viewers open at the end of the content,
 on the newest line.
@@ -190,7 +196,9 @@ Set these in your environment (e.g. in `.bashrc` before starting `claude`):
   fetches), notable (file edits and writes), or important (failures,
   permission prompts, session events). `quiet` (default) speaks important
   only. `normal` adds notable — brief phrases like "Claude edited
-  parser.py". `verbose` adds routine. Failures are spoken at every level,
+  parser.py". `verbose` adds routine, announced both as they start
+  ("starting: List repository files") and as they finish — the spoken
+  version of the TUI's spinner text. Failures are spoken at every level,
   with the first line of the error. Logging and the status keystroke are
   always complete regardless — verbosity only decides what interrupts you.
 

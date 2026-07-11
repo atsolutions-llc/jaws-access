@@ -38,7 +38,9 @@ MUTE_MODE = os.environ.get("JAWS_CLAUDE_MUTE", "on").lower()
 #   quiet   (default) speak important only: failures, permission prompts,
 #           session events, "Claude is done"
 #   normal  also speak notable: file edits and writes
-#   verbose also speak routine: commands, fetches, subagent work
+#   verbose also speak routine: commands, fetches, subagent work —
+#           announced both when they start ("starting: …", the spoken
+#           spinner) and when they finish
 # ---------------------------------------------------------------------------
 
 VERBOSITY = os.environ.get("JAWS_CLAUDE_VERBOSITY", "quiet").lower()
@@ -194,9 +196,12 @@ def say(text):
     )
 
 
-# Friendly speech names for Claude Code permission modes.
+# Friendly speech names for Claude Code permission modes. "auto" arrived
+# around Claude Code 2.1.207 (the hook payload value really is the string
+# "auto"); the older names are kept for older versions.
 MODE_NAMES = {
     "default": "manual approval",
+    "auto": "auto mode",
     "acceptEdits": "accept edits",
     "bypassPermissions": "bypass permissions, fully automatic",
     "plan": "plan mode",
